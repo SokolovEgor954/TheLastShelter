@@ -979,6 +979,7 @@ def menu_check():
             if 'change_status' in request.form:
                 position_obj.active = not position_obj.active
             elif 'delete_position' in request.form:
+                cursor.query(Reviews).filter_by(menu_id=position_id).delete()
                 cursor.delete(position_obj)
             cursor.commit()
 
