@@ -1,0 +1,411 @@
+{% extends "base.html" %}
+{% set active_page = 'menu' %}
+
+{% block title %}{{ position.name }} — Останній Прихисток{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Фото ── */
+.position-img-wrap {
+    border: 1px solid rgba(76,255,128,0.3);
+    border-radius: 4px;
+    overflow: hidden;
+    background: rgba(10,15,10,0.9);
+    position: relative;
+}
+.position-img-wrap img {
+    width: 100%;
+    height: 340px;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.4s ease;
+}
+.position-img-wrap:hover img { transform: scale(1.03); }
+
+.img-price-overlay {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,0.85));
+    padding: 28px 18px 14px;
+    font-size: 1.6rem;
+    color: #4cff80;
+    text-shadow: 0 0 14px rgba(76,255,128,1);
+    font-family: "Share Tech Mono", monospace;
+    font-weight: bold;
+}
+.img-weight-tag { font-size: 0.82rem; opacity: 0.55; margin-left: 8px; }
+
+/* ── Мета ── */
+.meta-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+.meta-tag {
+    border: 1px solid rgba(76,255,128,0.35);
+    padding: 3px 12px;
+    border-radius: 3px;
+    font-size: 0.78rem;
+    opacity: 0.7;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ── Інгредієнти ── */
+.ingredients-list { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.ingredient-chip {
+    background: rgba(76,255,128,0.06);
+    border: 1px solid rgba(76,255,128,0.25);
+    padding: 3px 10px;
+    border-radius: 3px;
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+/* ── Форма кошика ── */
+.add-form-wrap {
+    border: 1px solid rgba(76,255,128,0.4);
+    border-radius: 4px;
+    padding: 20px;
+    background: rgba(76,255,128,0.03);
+}
+.qty-row { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+.qty-label { font-size:0.85rem; opacity:0.6; white-space:nowrap; }
+.qty-field {
+    width: 70px;
+    background: rgba(5,10,5,0.9);
+    border: 1px solid rgba(76,255,128,0.5);
+    color: #4cff80;
+    font-family: "Share Tech Mono", monospace;
+    font-size: 1.05rem;
+    padding: 8px 10px;
+    border-radius: 4px;
+    text-align: center;
+    outline: none;
+}
+.qty-field:focus { border-color:#4cff80; box-shadow:0 0 10px rgba(76,255,128,0.3); }
+
+/* ── Анімації ── */
+.slide-in     { opacity:0; transform:translateX(14px);  animation:slideIn 0.4s ease forwards; }
+.slide-in-img { opacity:0; transform:translateX(-14px); animation:slideIn 0.4s ease forwards; }
+@keyframes slideIn { to { opacity:1; transform:translateX(0); } }
+.fade-up { opacity:0; transform:translateY(10px); animation:fadeUp 0.35s ease forwards; }
+@keyframes fadeUp { to { opacity:1; transform:translateY(0); } }
+
+/* ── Відгуки ── */
+.reviews-section { margin-top: 2.5rem; }
+
+.avg-block { display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+.avg-number {
+    font-size: 2.8rem;
+    color: #4cff80;
+    text-shadow: 0 0 16px rgba(76,255,128,0.9);
+    font-weight: bold;
+    line-height: 1;
+}
+.avg-stars { font-size:1.1rem; letter-spacing:3px; color:#4cff80; }
+.avg-count  { font-size:0.8rem; opacity:0.45; margin-top:4px; }
+
+.review-card {
+    border: 1px solid rgba(76,255,128,0.2);
+    border-radius: 4px;
+    padding: 14px 16px;
+    background: rgba(10,15,10,0.9);
+    transition: border-color 0.2s;
+}
+.review-card:hover { border-color: rgba(76,255,128,0.45); }
+
+.review-stars  { color:#4cff80; letter-spacing:2px; font-size:0.95rem; }
+.review-author { font-size:0.75rem; opacity:0.45; }
+.review-date   { font-size:0.72rem; opacity:0.35; }
+.review-comment { font-size:0.88rem; opacity:0.75; margin-top:8px; line-height:1.65; }
+
+/* Форма відгуку */
+.review-form-wrap {
+    border: 1px solid rgba(76,255,128,0.3);
+    border-radius: 4px;
+    padding: 20px;
+    background: rgba(76,255,128,0.02);
+}
+
+/* Зірки у формі */
+.star-row { display:flex; gap:8px; margin-bottom:14px; }
+.star-btn {
+    font-size: 1.5rem;
+    background: none;
+    border: none;
+    color: rgba(76,255,128,0.25);
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: 0.15s;
+}
+.star-btn.lit { color:#4cff80; text-shadow:0 0 8px rgba(76,255,128,0.7); }
+
+.textarea-haven {
+    width: 100%;
+    background: rgba(5,10,5,0.85);
+    border: 1px solid rgba(76,255,128,0.4);
+    color: #4cff80;
+    font-family: "Share Tech Mono", monospace;
+    font-size: 0.9rem;
+    padding: 10px 14px;
+    border-radius: 4px;
+    outline: none;
+    resize: vertical;
+    min-height: 80px;
+    box-sizing: border-box;
+    transition: 0.2s;
+}
+.textarea-haven:focus { border-color:#4cff80; box-shadow:0 0 8px rgba(76,255,128,0.3); }
+.textarea-haven::placeholder { color: rgba(76,255,128,0.3); }
+
+.btn-del-review {
+    font-family: "Share Tech Mono", monospace;
+    font-size: 0.72rem;
+    padding: 3px 10px;
+    border-radius: 3px;
+    border: 1px solid rgba(255,60,60,0.35);
+    background: none;
+    color: rgba(255,80,80,0.6);
+    cursor: pointer;
+    transition: 0.15s;
+}
+.btn-del-review:hover { background:rgba(255,60,60,0.1); border-color:#ff5050; color:#ff5050; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Flash -->
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <div class="alert alert-haven mb-4">☢ {{ messages[-1] }}</div>
+    {% endif %}
+{% endwith %}
+
+<!-- Хлібні крихти -->
+<div style="font-size:0.82rem; opacity:0.5; margin-bottom:16px;">
+    <a href="/menu" style="color:#4cff80; text-decoration:none;">☰ Меню</a>
+    <span style="margin:0 8px;">›</span>
+    <span>{{ position.name }}</span>
+</div>
+
+<div class="row g-4 align-items-start">
+
+    <!-- Фото -->
+    <div class="col-md-5 slide-in-img">
+        <div class="position-img-wrap">
+            <img src="/static/menu/{{ position.file_name }}"
+                 alt="{{ position.name }}"
+                 onerror="this.src=''; this.alt='☢';">
+            <div class="img-price-overlay">
+                {{ position.price }} грн
+                <span class="img-weight-tag">{{ position.weight }} г</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Деталі -->
+    <div class="col-md-7 slide-in" style="animation-delay:0.08s">
+        <div class="terminal-panel h-100">
+            <div class="terminal-header d-flex justify-content-between align-items-center">
+                <span class="terminal-title">[ ОПИС ПОЗИЦІЇ ]</span>
+                <span class="terminal-code">NODE: FOOD-{{ position.id }}</span>
+            </div>
+            <div class="terminal-body">
+
+                <h2 class="terminal-highlight mb-2">{{ position.name }}</h2>
+
+                <!-- Рейтинг поруч з назвою -->
+                {% if avg_rating %}
+                <div style="margin-bottom:12px;">
+                    <span style="color:#4cff80; font-size:1.1rem;">
+                        {% for i in range(1,6) %}{{ '★' if i <= avg_rating|round|int else '☆' }}{% endfor %}
+                    </span>
+                    <span style="font-size:0.82rem; opacity:0.5; margin-left:6px;">{{ avg_rating }} / 5 ({{ reviews|length }} відгуків)</span>
+                </div>
+                {% endif %}
+
+                <div class="meta-row">
+                    <span class="meta-tag">⚖ {{ position.weight }} г</span>
+                    <span class="meta-tag" style="border-color:rgba(76,255,128,0.6); opacity:1; color:#4cff80;">{{ position.price }} грн</span>
+                </div>
+
+                {% if position.description %}
+                <div style="opacity:0.8; line-height:1.75; margin-bottom:16px; font-size:0.95rem;">
+                    {{ position.description }}
+                </div>
+                {% endif %}
+
+                <div style="font-size:0.78rem; opacity:0.5; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Інгредієнти</div>
+                <div class="ingredients-list mb-4">
+                    {% for ing in position.ingredients.split(',') %}
+                    <span class="ingredient-chip">{{ ing.strip() }}</span>
+                    {% endfor %}
+                </div>
+
+                {% if current_user.is_authenticated %}
+                <div class="add-form-wrap">
+                    <form method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <input type="hidden" name="name" value="{{ position.name }}">
+                        <div class="qty-row">
+                            <span class="qty-label">Кількість:</span>
+                            <input type="number" name="num" min="1" max="10" value="1" required class="qty-field">
+                        </div>
+                        <button type="submit" class="btn btn-haven w-100" style="font-size:1rem; padding:13px;">
+                            🛒 Додати до кошика
+                        </button>
+                    </form>
+                </div>
+                {% else %}
+                <div class="add-form-wrap text-center">
+                    <p style="opacity:0.6; margin-bottom:12px;">> Увійдіть щоб додати страву до кошика.</p>
+                    <a href="/login" class="btn btn-haven w-100">☢ Увійти</a>
+                </div>
+                {% endif %}
+
+                <a href="/menu" class="btn btn-outline-haven w-100 mt-3" style="font-size:0.85rem;">← Повернутись до меню</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ══ ВІДГУКИ ══ -->
+<div class="reviews-section">
+
+    <div class="terminal-panel mb-4">
+        <div class="terminal-header d-flex justify-content-between align-items-center">
+            <span class="terminal-title">[ ВІДГУКИ ]</span>
+            <span class="terminal-code">{{ reviews|length }} записів</span>
+        </div>
+
+        {% if avg_rating %}
+        <div class="terminal-body">
+            <div class="avg-block">
+                <div class="avg-number">{{ avg_rating }}</div>
+                <div>
+                    <div class="avg-stars">
+                        {% for i in range(1,6) %}{{ '★' if i <= avg_rating|round|int else '☆' }}{% endfor %}
+                    </div>
+                    <div class="avg-count">на основі {{ reviews|length }} відгуків</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Форма додавання відгуку -->
+    {% if current_user.is_authenticated %}
+        {% if not user_reviewed %}
+        <div class="review-form-wrap mb-4 fade-up">
+            <div style="font-size:0.78rem; opacity:0.5; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">
+                ☢ Залишити відгук
+            </div>
+            <form method="post" action="/review/add/{{ position.id }}" id="reviewForm">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="menu_id" value="{{ position.id }}">
+                <input type="hidden" name="rating" id="ratingInput" value="0">
+
+                <!-- Зірки -->
+                <div class="star-row" id="starRow">
+                    {% for i in range(1,6) %}
+                    <button type="button" class="star-btn" data-val="{{ i }}">★</button>
+                    {% endfor %}
+                </div>
+
+                <textarea name="comment" class="textarea-haven mb-3"
+                          placeholder="> Напишіть ваш відгук (необов'язково)..."
+                          maxlength="300"></textarea>
+
+                <button type="submit" class="btn btn-haven w-100">☢ Надіслати відгук</button>
+            </form>
+        </div>
+        {% else %}
+        <div class="terminal-panel mb-4" style="border-color:rgba(76,255,128,0.2);">
+            <div class="terminal-body">
+                <p style="opacity:0.55;">> Ви вже залишали відгук на цю страву.</p>
+            </div>
+        </div>
+        {% endif %}
+    {% else %}
+    <div class="terminal-panel mb-4" style="border-color:rgba(76,255,128,0.2);">
+        <div class="terminal-body">
+            <p style="opacity:0.55;">> <a href="/login" style="color:#4cff80;">Увійдіть</a> щоб залишити відгук.</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Список відгуків -->
+    {% if reviews %}
+    <div class="d-flex flex-column gap-3">
+        {% for r in reviews %}
+        <div class="review-card fade-up" style="animation-delay:{{ loop.index0 * 0.06 }}s">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                <div>
+                    <div class="review-stars">
+                        {% for i in range(1,6) %}{{ '★' if i <= r.rating else '☆' }}{% endfor %}
+                    </div>
+                    <div class="review-author">👤 {{ r.author }} · <span class="review-date">{{ r.created_at }}</span></div>
+                </div>
+
+                <!-- Видалення: автор або адмін -->
+                {% if current_user.is_authenticated and (current_user.id == r['user_id'] or current_user.nickname == 'Admin') %}
+                <form method="post" action="/review/delete/{{ r.id }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="menu_id" value="{{ position.id }}">
+                    <button type="submit" class="btn-del-review">✖ Видалити</button>
+                </form>
+                {% endif %}
+            </div>
+
+            {% if r.comment %}
+            <div class="review-comment">> {{ r.comment }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="opacity:0.4; text-align:center; padding:1.5rem; font-size:0.9rem;">
+        > Відгуків ще немає. Будьте першим!
+    </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script nonce="{{ nonce }}">
+// ── Інтерактивні зірки ──
+const stars  = document.querySelectorAll('.star-btn');
+const rInput = document.getElementById('ratingInput');
+
+if (stars.length) {
+    stars.forEach(btn => {
+        btn.addEventListener('mouseenter', () => highlightStars(+btn.dataset.val));
+        btn.addEventListener('mouseleave', () => highlightStars(+rInput.value));
+        btn.addEventListener('click', () => {
+            rInput.value = btn.dataset.val;
+            highlightStars(+btn.dataset.val);
+        });
+    });
+}
+
+function highlightStars(val) {
+    stars.forEach(b => {
+        b.classList.toggle('lit', +b.dataset.val <= val);
+    });
+}
+
+// Валідація — не дозволяти надсилати без оцінки
+const form = document.getElementById('reviewForm');
+if (form) {
+    form.addEventListener('submit', function(e) {
+        if (!rInput.value || rInput.value === '0') {
+            e.preventDefault();
+            rInput.style.outline = '2px solid #ff5050';
+            alert('Оберіть оцінку від 1 до 5');
+        }
+    });
+}
+</script>
+{% endblock %}

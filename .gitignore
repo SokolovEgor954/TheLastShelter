@@ -1,0 +1,17 @@
+.env
+
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+.venv/
+venv/
+env/
+
+.idea/
+
+web/static/menu/
+
+*.log

@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+{% set active_page = 'profile' %}
+
+{% block title %}Профіль — {{ user.nickname }} — Останній Прихисток{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Аватар-генератор ── */
+.profile-avatar {
+    width: 100px;
+    height: 100px;
+    border: 2px solid #4cff80;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.6rem;
+    background: rgba(76,255,128,0.07);
+    box-shadow: 0 0 18px rgba(76,255,128,0.35), inset 0 0 20px rgba(76,255,128,0.05);
+    flex-shrink: 0;
+    animation: avatarPulse 3s ease-in-out infinite;
+}
+
+@keyframes avatarPulse {
+    0%, 100% { box-shadow: 0 0 18px rgba(76,255,128,0.35), inset 0 0 20px rgba(76,255,128,0.05); }
+    50%       { box-shadow: 0 0 30px rgba(76,255,128,0.6),  inset 0 0 30px rgba(76,255,128,0.1); }
+}
+
+/* ── Статистика ── */
+.stat-card {
+    border: 1px solid rgba(76,255,128,0.4);
+    padding: 18px 20px;
+    border-radius: 4px;
+    background: rgba(10,15,10,0.92);
+    text-align: center;
+    transition: 0.2s;
+    flex: 1;
+    min-width: 130px;
+}
+.stat-card:hover {
+    border-color: #4cff80;
+    box-shadow: 0 0 14px rgba(76,255,128,0.3);
+}
+.stat-value {
+    font-size: 2.2rem;
+    font-weight: bold;
+    color: #4cff80;
+    text-shadow: 0 0 12px rgba(76,255,128,0.9);
+    display: block;
+}
+.stat-label {
+    font-size: 0.78rem;
+    opacity: 0.65;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 4px;
+}
+
+/* ── Секції з анімацією появи ── */
+.profile-section {
+    opacity: 0;
+    transform: translateY(14px);
+    animation: fadeUp 0.4s ease forwards;
+}
+.profile-section:nth-child(1) { animation-delay: 0.05s; }
+.profile-section:nth-child(2) { animation-delay: 0.15s; }
+.profile-section:nth-child(3) { animation-delay: 0.25s; }
+.profile-section:nth-child(4) { animation-delay: 0.35s; }
+
+@keyframes fadeUp {
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Інпути всередині профілю ── */
+.input-haven {
+    width: 100%;
+    background: rgba(5,10,5,0.85);
+    border: 1px solid #4cff80;
+    padding: 10px 14px;
+    color: #4cff80;
+    font-family: "Share Tech Mono", monospace;
+    font-size: 1rem;
+    border-radius: 4px;
+    outline: none;
+    transition: 0.2s;
+    box-sizing: border-box;
+}
+.input-haven:focus {
+    border-color: #8affb8;
+    box-shadow: 0 0 12px rgba(76,255,128,0.45);
+}
+
+/* ── Бейдж ролі ── */
+.role-badge {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 3px;
+    font-size: 0.78rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+.role-admin {
+    border: 1px solid #ff4444;
+    color: #ff4444;
+    text-shadow: 0 0 6px rgba(255,68,68,0.6);
+}
+.role-user {
+    border: 1px solid #4cff80;
+    color: #4cff80;
+    opacity: 0.75;
+}
+
+/* ── Typing cursor ── */
+.typing-cursor::after {
+    content: '▋';
+    animation: blink 1s step-start infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Flash повідомлення -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-haven alert-{{ category }} mb-3">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<!-- ══ HEADER ПАНЕЛЬ ══ -->
+<div class="terminal-panel mb-4 profile-section">
+    <div class="terminal-header d-flex justify-content-between align-items-center">
+        <span class="terminal-title">[ ОСОБОВА СПРАВА ]</span>
+        <span class="terminal-code">NODE: PROFILE-{{ user.id }}</span>
+    </div>
+
+    <div class="terminal-body">
+        <div class="d-flex align-items-center gap-4 flex-wrap mt-2">
+
+            <!-- Аватар -->
+            <div class="profile-avatar">{{ user.nickname[0].upper() }}</div>
+
+            <!-- Інфо -->
+            <div>
+                <h2 class="terminal-highlight mb-1 typing-cursor">{{ user.nickname }}</h2>
+                <div class="mb-2" style="opacity:0.7; font-size:0.9rem;">
+                    ☢ {{ user.email }}
+                </div>
+                <span class="role-badge {% if user.nickname == 'Admin' %}role-admin{% else %}role-user{% endif %}">
+                    {% if user.nickname == 'Admin' %}⚠ Адміністратор{% else %}☢ Вцілілий{% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ СТАТИСТИКА ══ -->
+<div class="terminal-panel mb-4 profile-section">
+    <div class="terminal-header mb-3">
+        <span class="terminal-title">[ СТАТИСТИКА ВИЖИВАННЯ ]</span>
+    </div>
+    <div class="d-flex gap-3 flex-wrap">
+        <div class="stat-card">
+            <span class="stat-value">{{ orders_count }}</span>
+            <div class="stat-label">Замовлень</div>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value">{{ reserv_count }}</span>
+            <div class="stat-label">Бронювань</div>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value">#{{ user.id }}</span>
+            <div class="stat-label">ID виживши</div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ ШВИДКІ ДІЇ ══ -->
+<div class="terminal-panel mb-4 profile-section">
+    <div class="terminal-header mb-3">
+        <span class="terminal-title">[ НАВІГАЦІЯ ]</span>
+    </div>
+    <div class="d-flex gap-3 flex-wrap">
+        <a href="/my_orders" class="btn btn-haven">☰ Мої замовлення</a>
+        <a href="/my_reservations" class="btn btn-haven">🪑 Мої бронювання</a>
+        {% if user.nickname == 'Admin' %}
+        <a href="/menu_check" class="btn btn-haven" style="border-color:#ff4444; color:#ff4444;">⚠ Адмін-панель</a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ══ ЗМІНА ПАРОЛЯ ══ -->
+<div class="terminal-panel mb-4 profile-section">
+    <div class="terminal-header d-flex justify-content-between align-items-center mb-3">
+        <span class="terminal-title">[ ЗМІНА ПАРОЛЯ ]</span>
+        <span class="terminal-code" style="font-size:0.75rem; opacity:0.6;">SECURITY MODULE</span>
+    </div>
+
+    <form method="post" action="/profile/change_password">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+        <div class="mb-3">
+            <label class="form-label-haven">Поточний пароль</label>
+            <input type="password" name="old_password" required class="input-haven" placeholder="Введіть поточний пароль">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label-haven">Новий пароль</label>
+            <input type="password" name="new_password" required class="input-haven" placeholder="Мінімум 8 символів" minlength="8">
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label-haven">Підтвердження нового пароля</label>
+            <input type="password" name="confirm_password" required class="input-haven" placeholder="Повторіть новий пароль" minlength="8">
+        </div>
+
+        <button type="submit" class="btn btn-haven w-100">
+            ☢ Змінити пароль
+        </button>
+    </form>
+</div>
+
+<!-- ══ TELEGRAM ══ -->
+<div class="terminal-panel mb-4 profile-section">
+    <div class="terminal-header d-flex justify-content-between align-items-center mb-3">
+        <span class="terminal-title">[ TELEGRAM ]</span>
+        <span class="terminal-code" style="font-size:0.75rem; opacity:0.6;">LINK MODULE</span>
+    </div>
+    <div class="terminal-body">
+        {% if user.telegram_chat_id %}
+            <p style="color:#4cff80;">✅ Акаунт прив'язано до Telegram.</p>
+            <form method="post" action="/profile/telegram_unlink">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button type="submit" class="btn btn-danger-haven w-100">⚠ Відв'язати Telegram</button>
+            </form>
+        {% else %}
+            <p style="opacity:0.6; font-size:0.9rem;">> Прив'яжіть Telegram щоб отримувати сповіщення про замовлення та бронювання.</p>
+
+            {% if session.get('telegram_code') %}
+            <div style="border:1px dashed rgba(76,255,128,0.5); padding:14px; border-radius:4px; margin-bottom:14px; text-align:center;">
+                <div style="font-size:0.75rem; opacity:0.5; margin-bottom:6px; text-transform:uppercase; letter-spacing:1px;">Ваш код (дійсний 10 хвилин)</div>
+                <div style="font-size:2rem; color:#4cff80; text-shadow:0 0 14px rgba(76,255,128,0.9); letter-spacing:6px; font-weight:bold;">
+                    {{ session.get('telegram_code') }}
+                </div>
+                <div style="font-size:0.8rem; opacity:0.5; margin-top:8px;">Введіть цей код у нашого Telegram-бота</div>
+            </div>
+            {% endif %}
+
+            <form method="post" action="/profile/telegram_link">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button type="submit" class="btn btn-haven w-100">
+                    ✈ {{ 'Отримати новий код' if session.get('telegram_code') else 'Отримати код' }}
+                </button>
+            </form>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ══ ВИХІД ══ -->
+<div class="terminal-panel profile-section">
+    <div class="terminal-body">
+        <p style="opacity:0.6; font-size:0.9rem;">> Завершити поточну сесію та вийти з системи укриття.</p>
+        <form method="post" action="/logout">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit" class="btn btn-danger-haven w-100">
+                ⚠ Вийти з акаунта
+            </button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

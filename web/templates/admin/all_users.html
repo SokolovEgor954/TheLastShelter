@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% set active_page = 'admin' %}
+
+{% block title %}Усі користувачі — Останній Прихисток{% endblock %}
+
+{% block extra_head %}
+<style>
+.user-card {
+    border: 1px solid rgba(76,255,128,0.28);
+    border-radius: 4px;
+    background: rgba(10,15,10,0.92);
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    opacity: 0;
+    animation: fadeUp 0.3s ease forwards;
+    transition: border-color 0.2s;
+}
+.user-card:hover { border-color: rgba(76,255,128,0.6); }
+@keyframes fadeUp { to { opacity:1; transform:translateY(0); } }
+
+.user-avatar {
+    width: 42px; height: 42px;
+    border: 1px solid rgba(76,255,128,0.4);
+    border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+    background: rgba(76,255,128,0.06);
+    flex-shrink: 0;
+    color: #4cff80;
+    text-shadow: 0 0 8px rgba(76,255,128,0.6);
+}
+.user-avatar.admin-avatar {
+    border-color: rgba(255,60,60,0.5);
+    background: rgba(255,60,60,0.06);
+    color: #ff5050;
+    text-shadow: 0 0 8px rgba(255,60,60,0.6);
+}
+
+.user-nickname {
+    font-size: 1rem;
+    color: #4cff80;
+    text-shadow: 0 0 6px rgba(76,255,128,0.5);
+}
+.user-email { font-size: 0.82rem; opacity: 0.5; margin-top: 2px; }
+.user-id    { font-size: 0.72rem; opacity: 0.35; margin-top: 2px; letter-spacing: 1px; }
+
+.admin-badge {
+    font-size: 0.68rem;
+    padding: 2px 8px;
+    border: 1px solid rgba(255,60,60,0.5);
+    color: #ff5050;
+    border-radius: 2px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+.search-input {
+    background: rgba(5,10,5,0.85);
+    border: 1px solid rgba(76,255,128,0.4);
+    color: #4cff80;
+    font-family: "Share Tech Mono", monospace;
+    font-size: 0.9rem;
+    padding: 8px 14px;
+    border-radius: 4px;
+    outline: none;
+    width: 260px;
+    transition: 0.2s;
+}
+.search-input:focus { border-color: #4cff80; box-shadow: 0 0 8px rgba(76,255,128,0.3); }
+.search-input::placeholder { color: rgba(76,255,128,0.35); }
+
+.count-badge {
+    font-size: 0.8rem;
+    opacity: 0.5;
+}
+.btn-del {
+    font-family: "Share Tech Mono", monospace;
+    font-size: 0.78rem;
+    padding: 6px 14px;
+    border-radius: 3px;
+    border: 1px solid rgba(255,60,60,0.35);
+    background: rgba(255,60,60,0.06);
+    color: rgba(255,80,80,0.8);
+    cursor: pointer;
+    transition: 0.15s;
+    white-space: nowrap;
+}
+.btn-del:hover { background: rgba(255,60,60,0.15); border-color: #ff5050; color: #ff5050; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{% include 'admin/_admin_navigation.html' %}
+
+<div class="terminal-panel mb-4">
+    <div class="terminal-header d-flex justify-content-between align-items-center">
+        <span class="terminal-title">[ СПИСОК КОРИСТУВАЧІВ ]</span>
+        <span class="terminal-code">NODE: USERS-01</span>
+    </div>
+    <div class="terminal-body d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <p class="mb-0">> Перелік усіх зареєстрованих виживших у системі Прихистку.</p>
+        <span class="count-badge">Всього: {{ all_users|length }}</span>
+    </div>
+</div>
+
+<!-- Пошук -->
+<div class="mb-4">
+    <input type="text" id="searchInput" class="search-input" placeholder="> Пошук по нікнейму або email...">
+</div>
+
+<!-- Список -->
+<div class="d-flex flex-column gap-2" id="userList">
+    {% for user in all_users %}
+    <div class="user-card"
+         data-search="{{ user.nickname | lower }} {{ user.email | lower }}"
+         style="animation-delay: {{ loop.index0 * 0.04 }}s">
+
+        <!-- Аватар -->
+        <div class="user-avatar {{ 'admin-avatar' if user.nickname == 'Admin' else '' }}">
+            {{ user.nickname[0].upper() }}
+        </div>
+
+        <!-- Інфо -->
+        <div style="flex:1; min-width:0;">
+            <div class="user-nickname">
+                {{ user.nickname }}
+                {% if user.nickname == 'Admin' %}
+                <span class="admin-badge">⚠ admin</span>
+                {% endif %}
+            </div>
+            <div class="user-email">✉ {{ user.email }}</div>
+            <div class="user-id">ID: {{ user.id }}</div>
+        </div>
+
+        <!-- Видалення (крім адміна) -->
+        {% if user.nickname != 'Admin' %}
+        <form method="post" action="/delete_user/{{ user.id }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit" class="btn-del">✖ Видалити</button>
+        </form>
+        {% endif %}
+
+    </div>
+    {% else %}
+    <div style="opacity:0.5; text-align:center; padding:2rem;">
+        <p>> Користувачів не знайдено.</p>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script nonce="{{ nonce }}">
+document.getElementById('searchInput').addEventListener('input', function() {
+    const q = this.value.toLowerCase();
+    document.querySelectorAll('.user-card').forEach(card => {
+        card.style.display = card.dataset.search.includes(q) ? 'flex' : 'none';
+    });
+});
+</script>
+{% endblock %}

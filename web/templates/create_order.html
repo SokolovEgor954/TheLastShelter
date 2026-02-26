@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% set active_page = 'basket' %}
+
+{% block title %}Кошик — Останній Прихисток{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Рядок товару ── */
+.basket-item {
+    border: 1px solid rgba(76,255,128,0.3);
+    border-radius: 4px;
+    padding: 14px 18px;
+    background: rgba(10,15,10,0.92);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    opacity: 0;
+    transform: translateY(10px);
+    animation: fadeUp 0.3s ease forwards;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.basket-item:hover {
+    border-color: #4cff80;
+    box-shadow: 0 0 12px rgba(76,255,128,0.2);
+}
+@keyframes fadeUp { to { opacity:1; transform:translateY(0); } }
+
+/* ── Кнопки ± ── */
+.qty-controls {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border: 1px solid rgba(76,255,128,0.5);
+    border-radius: 4px;
+    overflow: hidden;
+}
+.qty-btn {
+    background: rgba(76,255,128,0.07);
+    border: none;
+    color: #4cff80;
+    font-family: "Share Tech Mono", monospace;
+    font-size: 1.1rem;
+    width: 34px;
+    height: 34px;
+    cursor: pointer;
+    transition: background 0.15s;
+    line-height: 1;
+}
+.qty-btn:hover { background: rgba(76,255,128,0.22); }
+.qty-value {
+    width: 36px;
+    text-align: center;
+    font-size: 1rem;
+    color: #4cff80;
+    text-shadow: 0 0 6px rgba(76,255,128,0.7);
+    border-left: 1px solid rgba(76,255,128,0.3);
+    border-right: 1px solid rgba(76,255,128,0.3);
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.delete-btn {
+    background: none;
+    border: 1px solid rgba(255,80,80,0.4);
+    color: rgba(255,80,80,0.7);
+    font-family: "Share Tech Mono", monospace;
+    font-size: 0.85rem;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: 0.15s;
+    white-space: nowrap;
+}
+.delete-btn:hover {
+    background: rgba(255,80,80,0.1);
+    border-color: #ff5050;
+    color: #ff5050;
+}
+
+/* ── Підсумок ── */
+.total-panel {
+    border: 1px solid #4cff80;
+    border-radius: 4px;
+    padding: 20px 24px;
+    background: rgba(10,15,10,0.95);
+    box-shadow: 0 0 16px rgba(76,255,128,0.15);
+}
+.total-label { opacity: 0.55; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 1px; }
+.total-value {
+    font-size: 2rem;
+    color: #4cff80;
+    text-shadow: 0 0 14px rgba(76,255,128,1);
+    font-weight: bold;
+}
+.item-name {
+    font-size: 1rem;
+    color: #4cff80;
+}
+.item-subtotal {
+    font-size: 0.82rem;
+    opacity: 0.5;
+    margin-top: 2px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Заголовок -->
+<div class="terminal-panel mb-4">
+    <div class="terminal-header d-flex justify-content-between align-items-center">
+        <span class="terminal-title">[ КОШИК — ОФОРМЛЕННЯ ЗАМОВЛЕННЯ ]</span>
+        <span class="terminal-code">NODE: ORDER-INIT</span>
+    </div>
+    <div class="terminal-body">
+        <p>> Перевір список провізії перед підтвердженням.</p>
+    </div>
+</div>
+
+<!-- Flash -->
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+<div class="alert alert-haven mb-3">{{ messages[0] }}</div>
+{% endif %}
+{% endwith %}
+
+{% if basket %}
+
+<!-- ── Список товарів ── -->
+<div class="d-flex flex-column gap-2 mb-4">
+    {% for position, qty in basket.items() %}
+    <div class="basket-item" style="animation-delay: {{ loop.index0 * 0.06 }}s">
+
+        <!-- Назва + підсума -->
+        <div>
+            <div class="item-name">☢ {{ position }}</div>
+            {% for pos in positions if pos.name == position %}
+            <div class="item-subtotal">{{ pos.price }} грн × {{ qty }} = {{ pos.price * qty|int }} грн</div>
+            {% endfor %}
+        </div>
+
+        <!-- Контролери кількості + видалення -->
+        <div class="d-flex align-items-center gap-3">
+
+            <form action="/basket/update/{{ position }}" method="post" class="d-flex align-items-center gap-2">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+                <div class="qty-controls">
+                    <button name="action" value="minus" class="qty-btn">−</button>
+                    <div class="qty-value">{{ qty }}</div>
+                    <button name="action" value="plus" class="qty-btn">+</button>
+                </div>
+
+                <button name="action" value="delete" class="delete-btn">✖ Видалити</button>
+            </form>
+
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- ── Підсумок + кнопки ── -->
+<div class="total-panel mb-3">
+    <div class="total-label mb-1">Загальна сума</div>
+    <div class="total-value mb-4">{{ total_price }} ₴</div>
+
+    <!-- Підтвердити -->
+    <form method="post" class="mb-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="btn btn-haven w-100" style="font-size:1.05rem; padding:14px;">
+            ☢ Підтвердити замовлення
+        </button>
+    </form>
+
+    <!-- Очистити -->
+    <form method="post" action="/basket/clear">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button class="btn btn-danger-haven w-100">
+            ✖ Очистити кошик
+        </button>
+    </form>
+</div>
+
+<a href="/menu" class="btn btn-outline-haven w-100">← Продовжити вибір</a>
+
+{% else %}
+
+<!-- ── Порожній кошик ── -->
+<div class="terminal-panel">
+    <div class="terminal-header">
+        <span class="terminal-title">[ КОШИК ПОРОЖНІЙ ]</span>
+    </div>
+    <div class="terminal-body">
+        <p class="mt-2">> Ви ще не додали жодної страви.</p>
+        <p>> Поверніться до меню, щоб обрати провізію.</p>
+        <a href="/menu" class="btn btn-haven mt-3">☰ До меню</a>
+    </div>
+</div>
+
+{% endif %}
+
+{% endblock %}

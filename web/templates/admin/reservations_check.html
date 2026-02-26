@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% set active_page = 'admin' %}
+
+{% block title %}Перевірка бронювань — Останній Прихисток{% endblock %}
+
+{% block extra_head %}
+<style>
+.reserv-card {
+    border: 1px solid rgba(76,255,128,0.3);
+    border-radius: 4px;
+    background: rgba(10,15,10,0.92);
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    opacity: 0;
+    animation: fadeUp 0.3s ease forwards;
+    transition: border-color 0.2s;
+}
+.reserv-card:hover { border-color: rgba(76,255,128,0.6); }
+@keyframes fadeUp { to { opacity:1; transform:translateY(0); } }
+
+.reserv-id   { font-size:0.75rem; opacity:0.45; text-transform:uppercase; letter-spacing:1px; margin-bottom:2px; }
+.reserv-time { font-size:1rem; color:#4cff80; text-shadow:0 0 6px rgba(76,255,128,0.6); }
+.reserv-user { font-size:0.85rem; opacity:0.7; margin-top:4px; }
+
+.table-badge {
+    display: inline-block;
+    border: 1px solid rgba(76,255,128,0.4);
+    padding: 3px 10px;
+    border-radius: 3px;
+    font-size: 0.78rem;
+    opacity: 0.8;
+    white-space: nowrap;
+}
+.badge-vip   { border-color: rgba(255,200,0,0.5); color: #ffc800; }
+.badge-large { border-color: rgba(76,200,255,0.5); color: #4cc8ff; }
+.badge-small { border-color: rgba(76,255,128,0.4); color: #4cff80; }
+
+/* Пошук */
+.search-input {
+    background: rgba(5,10,5,0.85);
+    border: 1px solid rgba(76,255,128,0.4);
+    color: #4cff80;
+    font-family: "Share Tech Mono", monospace;
+    font-size: 0.9rem;
+    padding: 8px 14px;
+    border-radius: 4px;
+    outline: none;
+    width: 220px;
+    transition: 0.2s;
+}
+.search-input:focus { border-color: #4cff80; box-shadow: 0 0 8px rgba(76,255,128,0.3); }
+.search-input::placeholder { color: rgba(76,255,128,0.35); }
+
+.filter-btn {
+    font-family: "Share Tech Mono", monospace;
+    font-size: 0.8rem;
+    padding: 5px 14px;
+    border-radius: 3px;
+    border: 1px solid rgba(76,255,128,0.35);
+    background: none;
+    color: rgba(76,255,128,0.6);
+    cursor: pointer;
+    transition: 0.15s;
+    text-transform: uppercase;
+}
+.filter-btn.active, .filter-btn:hover {
+    border-color: #4cff80;
+    color: #4cff80;
+    background: rgba(76,255,128,0.08);
+}
+
+.btn-del {
+    font-family: "Share Tech Mono", monospace;
+    font-size: 0.78rem;
+    padding: 6px 14px;
+    border-radius: 3px;
+    border: 1px solid rgba(255,60,60,0.35);
+    background: rgba(255,60,60,0.06);
+    color: rgba(255,80,80,0.8);
+    cursor: pointer;
+    transition: 0.15s;
+    white-space: nowrap;
+}
+.btn-del:hover { background: rgba(255,60,60,0.15); border-color: #ff5050; color: #ff5050; }
+
+.empty-state { opacity:0.5; text-align:center; padding:2rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{% include 'admin/_admin_navigation.html' %}
+
+<div class="terminal-panel mb-4">
+    <div class="terminal-header d-flex justify-content-between align-items-center">
+        <span class="terminal-title">[ ПЕРЕВІРКА БРОНЮВАНЬ ]</span>
+        <span class="terminal-code">NODE: RESERVE-CHECK</span>
+    </div>
+    <div class="terminal-body d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <p class="mb-0">> Перегляд та управління бронюваннями. Натисніть ⚠ щоб скасувати.</p>
+        <span style="font-size:0.82rem; opacity:0.5;">Всього: {{ all_reservations|length }}</span>
+    </div>
+</div>
+
+<!-- Flash -->
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+<div class="alert alert-haven mb-3">{{ messages[-1] }}</div>
+{% endif %}
+{% endwith %}
+
+<!-- Фільтр по даті + пошук + тип -->
+<div class="d-flex gap-3 flex-wrap align-items-center mb-4">
+    <input type="text" id="searchInput" class="search-input" placeholder="> Пошук по нікнейму...">
+
+    <!-- Фільтр по даті — серверний -->
+    <form method="get" class="d-flex gap-2 align-items-center">
+        <input type="date" name="date" class="search-input" style="width:170px;"
+               value="{{ selected_date or '' }}">
+        <button type="submit" class="filter-btn" style="border-color:rgba(76,255,128,0.5); color:#4cff80;">
+            ☢ По даті
+        </button>
+        {% if selected_date %}
+        <a href="/reservations_check" class="filter-btn" style="text-decoration:none; color:rgba(255,80,80,0.7); border-color:rgba(255,80,80,0.35);">
+            ✖ Скинути
+        </a>
+        {% endif %}
+    </form>
+
+    <!-- Фільтр по типу — фронтендовий -->
+    <div class="d-flex gap-2 flex-wrap">
+        <button class="filter-btn active" id="filterAll">Всі</button>
+        <button class="filter-btn" id="filterSmall">1-2 ос.</button>
+        <button class="filter-btn" id="filterMedium">3-4 ос.</button>
+        <button class="filter-btn" id="filterLarge">4+ ос.</button>
+    </div>
+</div>
+
+<!-- Список бронювань -->
+<div class="d-flex flex-column gap-2" id="reservList">
+    {% for res in all_reservations %}
+    <div class="reserv-card"
+         data-type="{{ res.table_type }}"
+         data-user="{{ res.user_nickname | lower }}"
+         style="animation-delay: {{ loop.index0 * 0.04 }}s">
+
+        <!-- Інфо -->
+        <div>
+            <div class="reserv-id">БРОНЮВАННЯ #{{ res.id }}</div>
+            <div class="reserv-time">☢ {{ res.time_start.strftime('%d.%m.%Y %H:%M') }}</div>
+            <div class="reserv-user">👤 {{ res.user_nickname }}</div>
+        </div>
+
+        <!-- Столик -->
+        <div>
+            {% if res.table_type == '4+' %}
+            <span class="table-badge badge-vip">★ VIP · Столик №{{ res.table_number }} · 4+ ос.</span>
+            {% elif res.table_type == '3-4' %}
+            <span class="table-badge badge-large">◼ Столик №{{ res.table_number }} · 3-4 ос.</span>
+            {% else %}
+            <span class="table-badge badge-small">▪ Столик №{{ res.table_number }} · 1-2 ос.</span>
+            {% endif %}
+            <div style="font-size:0.75rem; opacity:0.4; margin-top:4px;">{{ res.table_label }}</div>
+        </div>
+
+        <!-- Видалення -->
+        <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="reserv_id" value="{{ res.id }}">
+            <button type="submit" class="btn-del">⚠ Скасувати</button>
+        </form>
+
+    </div>
+    {% else %}
+    <div class="empty-state terminal-panel">
+        <p>> Бронювань не знайдено.</p>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script nonce="{{ nonce }}">
+// ── Пошук ──
+document.getElementById('searchInput').addEventListener('input', function() {
+    applyFilters();
+});
+
+// ── Фільтри по типу ──
+let currentType = 'all';
+
+document.getElementById('filterAll').addEventListener('click', function() { setFilter('all', this); });
+document.getElementById('filterSmall').addEventListener('click', function() { setFilter('1-2', this); });
+document.getElementById('filterMedium').addEventListener('click', function() { setFilter('3-4', this); });
+document.getElementById('filterLarge').addEventListener('click', function() { setFilter('4+', this); });
+
+function setFilter(type, btn) {
+    currentType = type;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    applyFilters();
+}
+
+function applyFilters() {
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    document.querySelectorAll('.reserv-card').forEach(card => {
+        const matchType = currentType === 'all' || card.dataset.type === currentType;
+        const matchUser = card.dataset.user.includes(query);
+        card.style.display = (matchType && matchUser) ? 'flex' : 'none';
+    });
+}
+</script>
+{% endblock %}

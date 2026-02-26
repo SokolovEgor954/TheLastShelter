@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+{% set active_page = 'reserved' %}
+{% block title %}Бронювання столика — Останній Прихисток{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ══ ЛЕГЕНДА ══ */
+.legend-dot {
+    width: 14px; height: 14px;
+    border-radius: 2px;
+    display: inline-block;
+    flex-shrink: 0;
+}
+.legend-row { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; opacity: 0.8; }
+
+/* ══ СХЕМА ЗАЛУ ══ */
+.floor-plan {
+    position: relative;
+    width: 100%;
+    padding-bottom: 60%;   /* співвідношення сторін */
+    border: 1px solid rgba(76,255,128,0.35);
+    border-radius: 4px;
+    background:
+        repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 39px,
+            rgba(76,255,128,0.04) 39px,
+            rgba(76,255,128,0.04) 40px
+        ),
+        repeating-linear-gradient(
+            90deg,
+            transparent,
+            transparent 39px,
+            rgba(76,255,128,0.04) 39px,
+            rgba(76,255,128,0.04) 40px
+        ),
+        rgba(8,12,8,0.97);
+    overflow: hidden;
+    cursor: default;
+}
+
+/* Підписи зон */
+.zone-label {
+    position: absolute;
+    font-size: 0.6rem;
+    opacity: 0.2;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    pointer-events: none;
+}
+
+/* Розділювач VIP */
+.vip-divider {
+    position: absolute;
+    top: 5%; bottom: 5%;
+    right: 28%;
+    width: 1px;
+    background: rgba(76,255,128,0.12);
+    pointer-events: none;
+}
+.vip-divider::before {
+    content: 'VIP';
+    position: absolute;
+    top: 50%;
+    left: 6px;
+    transform: translateY(-50%) rotate(90deg);
+    font-size: 0.55rem;
+    letter-spacing: 3px;
+    opacity: 0.2;
+}
+
+/* ══ СТОЛИК ══ */
+.table-btn {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    border-radius: 3px;
+    border: 1px solid;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: "Share Tech Mono", monospace;
+    line-height: 1.2;
+    user-select: none;
+}
+
+/* Вільний */
+.table-free {
+    background: rgba(76,255,128,0.08);
+    border-color: rgba(76,255,128,0.45);
+    color: #4cff80;
+}
+.table-free:hover {
+    background: rgba(76,255,128,0.22);
+    border-color: #4cff80;
+    box-shadow: 0 0 12px rgba(76,255,128,0.4);
+    transform: translate(-50%, -50%) scale(1.08);
+    z-index: 10;
+}
+
+/* Зайнятий */
+.table-taken {
+    background: rgba(255,60,60,0.07);
+    border-color: rgba(255,60,60,0.35);
+    color: rgba(255,80,80,0.6);
+    cursor: not-allowed;
+}
+
+/* Вибраний */
+.table-selected {
+    background: rgba(76,255,128,0.3) !important;
+    border-color: #4cff80 !important;
+    box-shadow: 0 0 16px rgba(76,255,128,0.6) !important;
+    color: #fff !important;
+    transform: translate(-50%, -50%) scale(1.1) !important;
+    z-index: 20;
+}
+
+.t-num  { font-size: 0.78rem; font-weight: bold; }
+.t-type { font-size: 0.55rem; opacity: 0.65; }
+
+/* Розміри за типом */
+.sz-small  { width: 6%;  padding-bottom: 5%;  }
+.sz-medium { width: 7.5%; padding-bottom: 6%; }
+.sz-large  { width: 9%;  padding-bottom: 7%;  }
+
+/* ══ ФОРМА ПІДТВЕРДЖЕННЯ ══ */
+.confirm-panel {
+    border: 1px solid rgba(76,255,128,0.4);
+    border-radius: 4px;
+    padding: 20px;
+    background: rgba(10,15,10,0.95);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.25s ease;
+    pointer-events: none;
+}
+.confirm-panel.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: all;
+}
+.selected-info {
+    font-size: 1rem;
+    color: #4cff80;
+    text-shadow: 0 0 8px rgba(76,255,128,0.6);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="terminal-panel mb-4">
+    <div class="terminal-header d-flex justify-content-between">
+        <span class="terminal-title">[ СХЕМА ЗАЛУ — БРОНЮВАННЯ ]</span>
+        <span class="terminal-code">NODE: FLOOR-PLAN</span>
+    </div>
+    <div class="terminal-body">
+        <p>> Оберіть столик на схемі залу. Зайняті позначені червоним.</p>
+    </div>
+</div>
+
+<!-- Flash -->
+{% if message %}
+<div class="alert alert-haven mb-3">{{ message }}</div>
+{% endif %}
+
+<!-- Легенда -->
+<div class="d-flex gap-4 flex-wrap mb-3" style="font-size:0.82rem;">
+    <div class="legend-row">
+        <span class="legend-dot" style="background:rgba(76,255,128,0.2); border:1px solid rgba(76,255,128,0.5);"></span>
+        Вільний
+    </div>
+    <div class="legend-row">
+        <span class="legend-dot" style="background:rgba(255,60,60,0.15); border:1px solid rgba(255,60,60,0.4);"></span>
+        Зайнятий
+    </div>
+    <div class="legend-row">
+        <span class="legend-dot" style="background:rgba(76,255,128,0.4); border:1px solid #4cff80;"></span>
+        Вибраний
+    </div>
+    <div class="legend-row" style="margin-left:auto; opacity:0.5;">
+        ▪ малий = 1-2 ос. &nbsp; ◼ середній = 3-4 ос. &nbsp; ◾ великий = 4+ ос.
+    </div>
+</div>
+
+<!-- ══ СХЕМА ЗАЛУ ══ -->
+<div class="floor-plan mb-4" id="floorPlan">
+
+    <!-- Підписи зон -->
+    <span class="zone-label" style="left:3%; top:3%;">ВІКНА</span>
+    <span class="zone-label" style="left:38%; top:3%;">ЦЕНТРАЛЬНА ЗОНА</span>
+    <span class="zone-label" style="right:5%; top:3%;">VIP</span>
+
+    <div class="vip-divider"></div>
+
+    <!-- Столики рендеряться через JS -->
+</div>
+
+<!-- ══ ФОРМА ПІДТВЕРДЖЕННЯ ══ -->
+<div class="confirm-panel mb-4" id="confirmPanel">
+    <div class="terminal-header mb-3">
+        <span class="terminal-title">[ ПІДТВЕРДЖЕННЯ БРОНЮВАННЯ ]</span>
+    </div>
+
+    <form method="post" id="reservForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="table_id"   id="tableIdInput">
+        <input type="hidden" name="latitude"   id="latitude">
+        <input type="hidden" name="longitude"  id="longitude">
+
+        <div class="mb-3">
+            <div class="selected-info" id="selectedInfo">—</div>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label-haven">Дата та час</label>
+            <input type="datetime-local" name="time" class="input-date-haven" required
+                   id="timeInput"
+                   min="{{ now }}">
+        </div>
+
+        <button type="submit" class="btn btn-haven w-100" style="font-size:1rem; padding:13px;">
+            ☢ Підтвердити бронювання
+        </button>
+    </form>
+</div>
+
+<div class="d-flex gap-3 flex-wrap">
+    <a href="/my_reservations" class="btn btn-outline-haven">☰ Мої бронювання</a>
+    <a href="/profile" class="btn btn-outline-haven">← Профіль</a>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script nonce="{{ nonce }}">
+// ── Дані столиків з бекенду ──
+const TABLES = {{ tables | tojson }};
+
+const plan  = document.getElementById('floorPlan');
+const panel = document.getElementById('confirmPanel');
+const info  = document.getElementById('selectedInfo');
+const input = document.getElementById('tableIdInput');
+
+let selectedId = null;
+
+// Розміри за типом
+const sizeClass = { '1-2': 'sz-small', '3-4': 'sz-medium', '4+': 'sz-large' };
+const typeLabel = { '1-2': '1-2 ос.', '3-4': '3-4 ос.', '4+': '4+ ос.' };
+
+TABLES.forEach(t => {
+    const btn = document.createElement('div');
+    btn.className = [
+        'table-btn',
+        sizeClass[t.type] || 'sz-medium',
+        t.taken ? 'table-taken' : 'table-free'
+    ].join(' ');
+
+    btn.style.left = t.x + '%';
+    btn.style.top  = t.y + '%';
+
+    btn.innerHTML = `<span class="t-num">№${t.number}</span><span class="t-type">${typeLabel[t.type]}</span>`;
+
+    if (!t.taken) {
+        btn.addEventListener('click', () => selectTable(t, btn));
+    } else {
+        btn.title = 'Столик вже заброньовано';
+    }
+
+    plan.appendChild(btn);
+});
+
+function selectTable(t, btn) {
+    // Скидаємо попередній вибір
+    document.querySelectorAll('.table-selected').forEach(el => {
+        el.classList.remove('table-selected');
+    });
+
+    if (selectedId === t.id) {
+        // Повторний клік — скасовуємо вибір
+        selectedId = null;
+        input.value = '';
+        info.textContent = '—';
+        panel.classList.remove('visible');
+        return;
+    }
+
+    selectedId = t.id;
+    input.value = t.id;
+    btn.classList.add('table-selected');
+
+    info.textContent = `Столик №${t.number} — ${t.label} (${typeLabel[t.type]})`;
+    panel.classList.add('visible');
+
+    // Скролимо до форми
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ── Геолокація ──
+if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+        pos => {
+            document.getElementById('latitude').value  = pos.coords.latitude;
+            document.getElementById('longitude').value = pos.coords.longitude;
+        },
+        err => console.warn('Геолокацію не вдалось отримати:', err)
+    );
+}
+
+// ── Мінімальний час — зараз ──
+const now = new Date();
+now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+document.getElementById('timeInput').min = now.toISOString().slice(0,16);
+</script>
+{% endblock %}

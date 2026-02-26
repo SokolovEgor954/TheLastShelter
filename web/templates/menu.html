@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+{% set active_page = 'menu' %}
+
+{% block title %}Меню — Останній Прихисток{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Фільтр-кнопки ── */
+.filter-btn {
+    font-family: "Share Tech Mono", monospace;
+    font-size: 0.8rem;
+    padding: 5px 14px;
+    border-radius: 3px;
+    border: 1px solid rgba(76,255,128,0.35);
+    background: none;
+    color: rgba(76,255,128,0.6);
+    cursor: pointer;
+    transition: 0.15s;
+    text-transform: uppercase;
+}
+.filter-btn.active, .filter-btn:hover {
+    border-color: #4cff80;
+    color: #4cff80;
+    background: rgba(76,255,128,0.08);
+}
+
+/* ── Посилання-обгортка картки ── */
+.menu-card-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    height: 100%;
+}
+
+/* ── Картка страви ── */
+.menu-card {
+    border: 1px solid rgba(76,255,128,0.3);
+    border-radius: 4px;
+    background: rgba(10,15,10,0.93);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+    opacity: 0;
+    animation: fadeUp 0.4s ease forwards;
+}
+.menu-card:hover {
+    border-color: #4cff80;
+    box-shadow: 0 0 18px rgba(76,255,128,0.22);
+    transform: translateY(-3px);
+}
+@keyframes fadeUp { to { opacity:1; transform:translateY(0); } }
+
+/* ── Фото ── */
+.menu-card-img {
+    width: 100%;
+    height: 190px;
+    object-fit: cover;
+    border-bottom: 1px solid rgba(76,255,128,0.25);
+    display: block;
+}
+.menu-card-img-placeholder {
+    width: 100%;
+    height: 190px;
+    background: rgba(76,255,128,0.04);
+    border-bottom: 1px solid rgba(76,255,128,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    opacity: 0.3;
+}
+
+/* ── Тіло картки ── */
+.menu-card-body {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 8px;
+}
+.menu-card-title {
+    font-size: 1.05rem;
+    color: #4cff80;
+    text-shadow: 0 0 8px rgba(76,255,128,0.6);
+    margin: 0;
+}
+.menu-card-ingredients {
+    font-size: 0.8rem;
+    opacity: 0.5;
+    line-height: 1.5;
+    flex: 1;
+
+    /* обрізаємо довгий текст */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.menu-card-price {
+    font-size: 1.3rem;
+    color: #4cff80;
+    text-shadow: 0 0 10px rgba(76,255,128,0.8);
+    font-weight: bold;
+}
+.menu-card-weight {
+    font-size: 0.78rem;
+    opacity: 0.45;
+}
+
+/* ── Форма "в кошик" прямо на картці ── */
+.quick-add-form {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-top: auto;
+    padding-top: 10px;
+    border-top: 1px solid rgba(76,255,128,0.15);
+}
+.qty-input-small {
+    width: 52px;
+    background: rgba(5,10,5,0.85);
+    border: 1px solid rgba(76,255,128,0.5);
+    color: #4cff80;
+    font-family: "Share Tech Mono", monospace;
+    font-size: 0.95rem;
+    padding: 6px 8px;
+    border-radius: 4px;
+    text-align: center;
+    outline: none;
+}
+.qty-input-small:focus { border-color: #4cff80; box-shadow: 0 0 8px rgba(76,255,128,0.3); }
+.btn-cart {
+    flex: 1;
+    background: rgba(76,255,128,0.08);
+    border: 1px solid rgba(76,255,128,0.55);
+    color: #4cff80;
+    font-family: "Share Tech Mono", monospace;
+    font-size: 0.82rem;
+    padding: 7px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: 0.15s;
+    text-transform: uppercase;
+}
+.btn-cart:hover { background: rgba(76,255,128,0.2); border-color: #4cff80; }
+
+/* ── Посилання "Детальніше" ── */
+.btn-details {
+    font-size: 0.78rem;
+    opacity: 0.55;
+    color: #4cff80;
+    text-decoration: none;
+    white-space: nowrap;
+    padding: 7px 8px;
+    border: 1px solid rgba(76,255,128,0.25);
+    border-radius: 4px;
+    transition: 0.15s;
+    font-family: "Share Tech Mono", monospace;
+}
+.btn-details:hover { opacity: 1; border-color: #4cff80; color: #4cff80; }
+
+/* ── Flash ── */
+.flash-fixed {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: rgba(10,15,10,0.97);
+    border: 1px solid #4cff80;
+    color: #4cff80;
+    font-family: "Share Tech Mono", monospace;
+    padding: 12px 20px;
+    border-radius: 4px;
+    box-shadow: 0 0 16px rgba(76,255,128,0.35);
+    z-index: 9999;
+    animation: slideIn 0.3s ease, fadeOut 0.4s ease 2.2s forwards;
+    font-size: 0.9rem;
+}
+@keyframes slideIn { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+@keyframes fadeOut { to { opacity:0; transform:translateY(8px); } }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="terminal-panel mb-4">
+    <div class="terminal-header d-flex justify-content-between align-items-center mb-2">
+        <span class="terminal-title">[ МЕНЮ ПРИХИСТКУ ]</span>
+        <span class="terminal-code">NODE: MENU-01</span>
+    </div>
+    <div class="terminal-body">
+        <p>> Перед тобою залишки кулінарного мистецтва Старого Світу.</p>
+        <p>> Кожна страва — шанс вижити ще один день.</p>
+    </div>
+</div>
+
+<!-- Flash toast -->
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+<div class="flash-fixed">☢ {{ messages[-1] }}</div>
+{% endif %}
+{% endwith %}
+
+<!-- Пошук + фільтри -->
+<div class="d-flex gap-3 flex-wrap align-items-center mb-4">
+    <input type="text" id="menuSearch" placeholder="> Пошук страви..."
+           style="background:rgba(5,10,5,0.85); border:1px solid rgba(76,255,128,0.4); color:#4cff80;
+                  font-family:'Share Tech Mono',monospace; font-size:0.9rem; padding:8px 14px;
+                  border-radius:4px; outline:none; width:220px; transition:0.2s;"
+           onfocus="this.style.borderColor='#4cff80'; this.style.boxShadow='0 0 8px rgba(76,255,128,0.3)'"
+           onblur="this.style.borderColor='rgba(76,255,128,0.4)'; this.style.boxShadow='none'">
+
+    <div class="d-flex gap-2 flex-wrap" id="sortBtns">
+        <button class="filter-btn active" id="sortDefault">Всі</button>
+        <button class="filter-btn" id="sortPrice">↑ Ціна</button>
+        <button class="filter-btn" id="sortPriceDesc">↓ Ціна</button>
+    </div>
+
+    <span id="menuCount" style="font-size:0.78rem; opacity:0.4; margin-left:auto;"></span>
+</div>
+
+<!-- Сітка карток -->
+<div class="row g-3" id="menuGrid">
+    {% for position in all_positions %}
+    <div class="col-xl-3 col-md-4 col-sm-6 menu-col"
+         data-name="{{ position.name | lower }}"
+         data-ingredients="{{ position.ingredients | lower }}"
+         data-price="{{ position.price }}"
+         data-index="{{ loop.index0 }}">
+        <a href="/position/{{ position.id }}" class="menu-card-link">
+        <div class="menu-card" style="animation-delay: {{ loop.index0 * 0.06 }}s">
+
+            <!-- Фото -->
+            {% if position.file_name %}
+            <img src="/static/menu/{{ position.file_name }}"
+                 class="menu-card-img"
+                 alt="{{ position.name }}"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="menu-card-img-placeholder" style="display:none;">☢</div>
+            {% else %}
+            <div class="menu-card-img-placeholder">☢</div>
+            {% endif %}
+
+            <!-- Тіло -->
+            <div class="menu-card-body">
+                <h4 class="menu-card-title">{{ position.name }}</h4>
+
+                <div class="menu-card-ingredients">{{ position.ingredients }}</div>
+
+                <div class="d-flex align-items-baseline gap-2 mt-1">
+                    <span class="menu-card-price">{{ position.price }} грн</span>
+                    <span class="menu-card-weight">{{ position.weight }} г</span>
+                </div>
+
+                <!-- Швидке додавання в кошик -->
+                {% if current_user.is_authenticated %}
+                <form class="quick-add-form" method="post" action="/position/{{ position.id }}" onclick="event.stopPropagation()">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="name" value="{{ position.name }}">
+                    <input type="hidden" name="next" value="menu">
+                    <input type="number" name="num" value="1" min="1" max="10" class="qty-input-small" onclick="event.stopPropagation()">
+                    <button type="submit" class="btn-cart">🛒 В кошик</button>
+                </form>
+                {% else %}
+                <div class="quick-add-form">
+                    <span class="btn btn-haven w-100" style="font-size:0.85rem; padding:8px;">
+                        ☢ Детальніше
+                    </span>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script nonce="{{ nonce }}">
+// ── Flash автоприховання ──
+setTimeout(() => { const f = document.querySelector('.flash-fixed'); if (f) f.remove(); }, 2600);
+
+// ── Пошук + сортування ──
+const grid  = document.getElementById('menuGrid');
+const cards = Array.from(document.querySelectorAll('.menu-col'));
+const count = document.getElementById('menuCount');
+
+let searchQuery = '';
+let sortMode    = 'default';
+
+function updateCount(n) { count.textContent = `Показано: ${n} з ${cards.length}`; }
+
+document.getElementById('menuSearch').addEventListener('input', function() {
+    searchQuery = this.value.toLowerCase();
+    applyFilters();
+});
+
+document.getElementById('sortDefault').addEventListener('click', function() { setSort('default', this); });
+document.getElementById('sortPrice').addEventListener('click', function() { setSort('price-asc', this); });
+document.getElementById('sortPriceDesc').addEventListener('click', function() { setSort('price-desc', this); });
+
+function setSort(mode, btn) {
+    sortMode = mode;
+    document.querySelectorAll('#sortBtns .filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    applyFilters();
+}
+
+function applyFilters() {
+    let visible = cards.filter(col =>
+        (col.dataset.name || '').includes(searchQuery) ||
+        (col.dataset.ingredients || '').includes(searchQuery)
+    );
+
+    cards.forEach(col => col.style.display = 'none');
+
+    if (sortMode === 'price-asc')  visible.sort((a,b) => +a.dataset.price - +b.dataset.price);
+    else if (sortMode === 'price-desc') visible.sort((a,b) => +b.dataset.price - +a.dataset.price);
+    else visible.sort((a,b) => +a.dataset.index - +b.dataset.index);
+
+    visible.forEach(col => { col.style.display = ''; grid.appendChild(col); });
+    updateCount(visible.length);
+}
+
+updateCount(cards.length);
+</script>
+{% endblock %}

@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% set active_page = 'reserved' %}
+
+{% block title %}Мої бронювання — Останній Прихисток{% endblock %}
+
+{% block extra_head %}
+<style>
+.reserv-card {
+    border: 1px solid rgba(76,255,128,0.35);
+    border-radius: 4px;
+    background: rgba(10,15,10,0.92);
+    padding: 18px 20px;
+    transition: 0.2s;
+    opacity: 0;
+    transform: translateY(12px);
+    animation: fadeUp 0.35s ease forwards;
+}
+.reserv-card:hover {
+    border-color: #4cff80;
+    box-shadow: 0 0 14px rgba(76,255,128,0.25);
+}
+@keyframes fadeUp { to { opacity:1; transform:translateY(0); } }
+
+.reserv-meta {
+    font-size: 0.82rem;
+    opacity: 0.55;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.reserv-time {
+    font-size: 1.15rem;
+    color: #4cff80;
+    text-shadow: 0 0 8px rgba(76,255,128,0.7);
+}
+.table-badge {
+    display: inline-block;
+    border: 1px solid #4cff80;
+    padding: 2px 10px;
+    border-radius: 3px;
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+.btn-del {
+    font-family: "Share Tech Mono", monospace;
+    font-size: 0.78rem;
+    padding: 6px 14px;
+    border-radius: 3px;
+    border: 1px solid rgba(255,60,60,0.35);
+    background: rgba(255,60,60,0.06);
+    color: rgba(255,80,80,0.8);
+    cursor: pointer;
+    transition: 0.15s;
+    white-space: nowrap;
+}
+.btn-del:hover { background: rgba(255,60,60,0.15); border-color: #ff5050; color: #ff5050; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="terminal-panel mb-4">
+    <div class="terminal-header d-flex justify-content-between align-items-center">
+        <span class="terminal-title">[ МОЇ БРОНЮВАННЯ ]</span>
+        <span class="terminal-code">NODE: RESERV-LIST</span>
+    </div>
+    <div class="terminal-body">
+        <p>> Перелік усіх заброньованих місць у Прихистку.</p>
+    </div>
+</div>
+
+<!-- Flash -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-haven alert-{{ category }} mb-3">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+{% if reservations %}
+    <div class="d-flex flex-column gap-3 mb-4">
+    {% for r in reservations %}
+        <div class="reserv-card" style="animation-delay: {{ loop.index0 * 0.07 }}s">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+
+                <div>
+                    <div class="reserv-meta mb-1">БРОНЮВАННЯ #{{ r.id }}</div>
+                    <div class="reserv-time mb-2">☢ {{ r.time_start.strftime('%d.%m.%Y %H:%M') }}</div>
+                    <span class="table-badge">🪑 Столик №{{ r.table_number }} — {{ r.table_label }} ({{ r.table_type }} ос.)</span>
+                </div>
+
+                <div class="d-flex gap-2 align-items-center flex-wrap">
+                    <a href="/edit_reservation/{{ r.id }}" class="btn btn-haven btn-sm">
+                        ✎ Редагувати
+                    </a>
+                    <form method="post" action="/reservation/cancel/{{ r.id }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="btn-del">✖ Скасувати</button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    {% endfor %}
+    </div>
+{% else %}
+    <div class="terminal-panel mb-4">
+        <div class="terminal-header">
+            <span class="terminal-title">[ НІЧОГО НЕ ЗНАЙДЕНО ]</span>
+        </div>
+        <div class="terminal-body">
+            <p>> У вас ще немає активних бронювань.</p>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Кнопки навігації -->
+<div class="d-flex gap-3 flex-wrap">
+    <a href="/reserved" class="btn btn-haven">+ Нове бронювання</a>
+    <a href="/profile" class="btn btn-outline-haven">← Профіль</a>
+</div>
+
+{% endblock %}

@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% set active_page = 'reserved' %}
+{% block title %}Редагування бронювання #{{ reserv_id }} — Останній Прихисток{% endblock %}
+
+{% block extra_head %}
+<style>
+.floor-plan {
+    position: relative; width: 100%; padding-bottom: 60%;
+    border: 1px solid rgba(76,255,128,0.35); border-radius: 4px;
+    background:
+        repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(76,255,128,0.04) 39px, rgba(76,255,128,0.04) 40px),
+        repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(76,255,128,0.04) 39px, rgba(76,255,128,0.04) 40px),
+        rgba(8,12,8,0.97);
+    overflow: hidden;
+}
+.zone-label { position:absolute; font-size:0.6rem; opacity:0.2; text-transform:uppercase; letter-spacing:2px; pointer-events:none; }
+.vip-divider { position:absolute; top:5%; bottom:5%; right:28%; width:1px; background:rgba(76,255,128,0.12); pointer-events:none; }
+.table-btn {
+    position:absolute; transform:translate(-50%,-50%);
+    border-radius:3px; border:1px solid;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    cursor:pointer; transition:all 0.15s;
+    font-family:"Share Tech Mono",monospace; line-height:1.2; user-select:none;
+}
+.table-free     { background:rgba(76,255,128,0.08); border-color:rgba(76,255,128,0.45); color:#4cff80; }
+.table-free:hover { background:rgba(76,255,128,0.22); border-color:#4cff80; box-shadow:0 0 12px rgba(76,255,128,0.4); transform:translate(-50%,-50%) scale(1.08); z-index:10; }
+.table-taken    { background:rgba(255,60,60,0.07); border-color:rgba(255,60,60,0.35); color:rgba(255,80,80,0.6); cursor:not-allowed; }
+.table-current  { background:rgba(76,255,128,0.15); border-color:#4cff80; border-style:dashed; color:#4cff80; }
+.table-selected { background:rgba(76,255,128,0.3) !important; border-color:#4cff80 !important; border-style:solid !important; box-shadow:0 0 16px rgba(76,255,128,0.6) !important; color:#fff !important; transform:translate(-50%,-50%) scale(1.1) !important; z-index:20; }
+.t-num { font-size:0.78rem; font-weight:bold; }
+.t-type { font-size:0.55rem; opacity:0.65; }
+.sz-small  { width:6%;   padding-bottom:5%; }
+.sz-medium { width:7.5%; padding-bottom:6%; }
+.sz-large  { width:9%;   padding-bottom:7%; }
+.confirm-panel { border:1px solid rgba(76,255,128,0.4); border-radius:4px; padding:20px; background:rgba(10,15,10,0.95); }
+.selected-info { font-size:1rem; color:#4cff80; text-shadow:0 0 8px rgba(76,255,128,0.6); }
+.legend-dot { width:14px; height:14px; border-radius:2px; display:inline-block; flex-shrink:0; }
+.legend-row { display:flex; align-items:center; gap:8px; font-size:0.82rem; opacity:0.8; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="terminal-panel mb-4">
+    <div class="terminal-header d-flex justify-content-between align-items-center">
+        <span class="terminal-title">[ РЕДАГУВАННЯ БРОНЮВАННЯ #{{ reserv_id }} ]</span>
+        <span class="terminal-code">NODE: EDIT-RESERV</span>
+    </div>
+    <div class="terminal-body">
+        <p>> Оберіть новий столик або змініть час. Пунктиром позначено ваш поточний столик.</p>
+    </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}{% for cat, msg in messages %}
+    <div class="alert alert-haven alert-{{ cat }} mb-3">{{ msg }}</div>
+    {% endfor %}{% endif %}
+{% endwith %}
+
+<div class="d-flex gap-4 flex-wrap mb-3">
+    <div class="legend-row"><span class="legend-dot" style="background:rgba(76,255,128,0.2);border:1px solid rgba(76,255,128,0.5);"></span>Вільний</div>
+    <div class="legend-row"><span class="legend-dot" style="background:rgba(255,60,60,0.15);border:1px solid rgba(255,60,60,0.4);"></span>Зайнятий</div>
+    <div class="legend-row"><span class="legend-dot" style="background:rgba(76,255,128,0.15);border:1px dashed #4cff80;"></span>Ваш поточний</div>
+    <div class="legend-row"><span class="legend-dot" style="background:rgba(76,255,128,0.4);border:1px solid #4cff80;"></span>Вибраний</div>
+</div>
+
+<div class="floor-plan mb-4" id="floorPlan">
+    <span class="zone-label" style="left:3%;top:3%;">ВІКНА</span>
+    <span class="zone-label" style="left:38%;top:3%;">ЦЕНТРАЛЬНА ЗОНА</span>
+    <span class="zone-label" style="right:5%;top:3%;">VIP</span>
+    <div class="vip-divider"></div>
+</div>
+
+<div class="confirm-panel mb-4">
+    <div class="terminal-header mb-3">
+        <span class="terminal-title">[ ЗМІНА БРОНЮВАННЯ ]</span>
+    </div>
+    <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="table_id" id="tableIdInput" value="{{ table_id_cur }}">
+
+        <div class="mb-3">
+            <div style="font-size:0.78rem; opacity:0.5; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Вибраний столик</div>
+            <div class="selected-info" id="selectedInfo">Поточний столик №{{ table_number }}</div>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label-haven">Дата та час</label>
+            <input type="datetime-local" name="time" class="input-date-haven" required
+                   min="{{ now }}" value="{{ time_val }}">
+        </div>
+
+        <div class="d-flex gap-3">
+            <button type="submit" class="btn btn-haven flex-fill" style="padding:13px;">☢ Зберегти зміни</button>
+            <a href="/profile" class="btn btn-outline-haven">← Скасувати</a>
+        </div>
+    </form>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script nonce="{{ nonce }}">
+const TABLES     = {{ tables | tojson }};
+const CURRENT_ID = {{ table_id_cur }};
+const plan  = document.getElementById('floorPlan');
+const info  = document.getElementById('selectedInfo');
+const input = document.getElementById('tableIdInput');
+const sizeClass = { '1-2':'sz-small', '3-4':'sz-medium', '4+':'sz-large' };
+const typeLabel = { '1-2':'1-2 ос.', '3-4':'3-4 ос.', '4+':'4+ ос.' };
+
+TABLES.forEach(t => {
+    const btn = document.createElement('div');
+    let cls = t.taken ? 'table-taken' : t.current ? 'table-current' : 'table-free';
+    btn.className = ['table-btn', sizeClass[t.type] || 'sz-medium', cls].join(' ');
+    btn.style.left = t.x + '%';
+    btn.style.top  = t.y + '%';
+    btn.innerHTML  = `<span class="t-num">№${t.number}</span><span class="t-type">${typeLabel[t.type]}</span>`;
+    btn.title = t.taken ? 'Зайнятий' : `${t.label} (${typeLabel[t.type]})`;
+
+    if (!t.taken) {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.table-selected').forEach(el => el.classList.remove('table-selected'));
+            input.value = t.id;
+            btn.classList.add('table-selected');
+            info.textContent = `Столик №${t.number} — ${t.label} (${typeLabel[t.type]})`;
+        });
+    }
+    plan.appendChild(btn);
+});
+</script>
+{% endblock %}

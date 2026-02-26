@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% set active_page = 'orders' %}
+
+{% block title %}Мої замовлення — Останній Прихисток{% endblock %}
+
+{% block extra_head %}
+<style>
+.order-card {
+    border: 1px solid rgba(76,255,128,0.35);
+    border-radius: 4px;
+    background: rgba(10,15,10,0.92);
+    padding: 18px 20px;
+    transition: 0.2s;
+    opacity: 0;
+    transform: translateY(12px);
+    animation: fadeUp 0.35s ease forwards;
+}
+.order-card:hover {
+    border-color: #4cff80;
+    box-shadow: 0 0 14px rgba(76,255,128,0.25);
+}
+@keyframes fadeUp { to { opacity:1; transform:translateY(0); } }
+
+.order-meta {
+    font-size: 0.8rem;
+    opacity: 0.5;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.order-time {
+    font-size: 1.05rem;
+    color: #4cff80;
+    text-shadow: 0 0 6px rgba(76,255,128,0.6);
+}
+.status-badge {
+    display: inline-block;
+    border: 1px solid;
+    padding: 2px 10px;
+    border-radius: 3px;
+    font-size: 0.78rem;
+    opacity: 0.85;
+}
+.status-new       { border-color: rgba(76,255,128,0.5); color: #4cff80; }
+.status-preparing { border-color: rgba(255,200,0,0.5);  color: #ffc800; }
+.status-ready     { border-color: rgba(76,200,255,0.5); color: #4cc8ff; }
+.status-delivered { border-color: rgba(150,150,150,0.5); color: #aaa; }
+.order-items-preview {
+    font-size: 0.88rem;
+    opacity: 0.7;
+    margin-top: 6px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="terminal-panel mb-4">
+    <div class="terminal-header d-flex justify-content-between align-items-center">
+        <span class="terminal-title">[ ІСТОРІЯ ЗАМОВЛЕНЬ ]</span>
+        <span class="terminal-code">NODE: ORDERS-LIST</span>
+    </div>
+    <div class="terminal-body">
+        <p>> Нижче відображені всі замовлення, зафіксовані у вашому профілі.</p>
+    </div>
+</div>
+
+<!-- Flash -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-haven alert-{{ category }} mb-3">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+{% if us_orders %}
+    <div class="d-flex flex-column gap-3 mb-4">
+        {% for order in us_orders %}
+        <div class="order-card" style="animation-delay: {{ loop.index0 * 0.07 }}s">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+
+                <div>
+                    <div class="order-meta mb-1">ЗАМОВЛЕННЯ #{{ order.id }}</div>
+                    <div class="order-time mb-2">☢ {{ order.order_time }}</div>
+
+                    {% set status_map = {
+                        'new':       ('🆕 Нове',      'status-new'),
+                        'preparing': ('👨‍🍳 Готується', 'status-preparing'),
+                        'ready':     ('✅ Готово',     'status-ready'),
+                        'delivered': ('🚀 Доставлено', 'status-delivered')
+                    } %}
+                    {% set status_info = status_map.get(order.status, ('● ' ~ order.status, 'status-new')) %}
+                    <span class="status-badge {{ status_info[1] }}">{{ status_info[0] }}</span>
+
+                    <!-- Короткий список страв -->
+                    {% if order.order_list %}
+                    <div class="order-items-preview mt-2">
+                        {% set items = order.order_list.items() | list %}
+                        {% for name, qty in items[:3] %}
+                            > {{ name }} × {{ qty }}<br>
+                        {% endfor %}
+                        {% if items | length > 3 %}
+                            <span style="opacity:0.45;">... ще {{ items|length - 3 }} позицій</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <a href="/my_order/{{ order.id }}" class="btn btn-haven btn-sm align-self-center">
+                    ☢ Деталі
+                </a>
+
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="terminal-panel mb-4">
+        <div class="terminal-header">
+            <span class="terminal-title">[ НІЧОГО НЕ ЗНАЙДЕНО ]</span>
+        </div>
+        <div class="terminal-body">
+            <p>> У вас ще немає замовлень у системі укриття.</p>
+        </div>
+    </div>
+{% endif %}
+
+<div class="d-flex gap-3 flex-wrap">
+    <a href="/menu" class="btn btn-haven">☰ До меню</a>
+    <a href="/profile" class="btn btn-outline-haven">← Профіль</a>
+</div>
+
+{% endblock %}

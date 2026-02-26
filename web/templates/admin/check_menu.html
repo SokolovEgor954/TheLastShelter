@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+{% set active_page = 'admin' %}
+
+{% block title %}Адміністрування меню — Останній Прихисток{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Картка позиції ── */
+.menu-admin-card {
+    border: 1px solid rgba(76,255,128,0.3);
+    border-radius: 4px;
+    background: rgba(10,15,10,0.92);
+    overflow: hidden;
+    display: flex;
+    gap: 0;
+    opacity: 0;
+    animation: fadeUp 0.35s ease forwards;
+    transition: border-color 0.2s;
+}
+.menu-admin-card:hover {
+    border-color: rgba(76,255,128,0.7);
+}
+.menu-admin-card.inactive {
+    border-color: rgba(255,60,60,0.25);
+    opacity: 0;
+    animation: fadeUp 0.35s ease forwards;
+}
+.menu-admin-card.inactive:hover {
+    border-color: rgba(255,60,60,0.5);
+}
+@keyframes fadeUp { to { opacity:1; transform:translateY(0); } }
+
+/* ── Фото ── */
+.card-img-wrap {
+    width: 110px;
+    flex-shrink: 0;
+    overflow: hidden;
+    position: relative;
+}
+.card-img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.card-img-placeholder {
+    width: 100%;
+    height: 100%;
+    min-height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    opacity: 0.2;
+    background: rgba(76,255,128,0.04);
+}
+
+/* Статус-оверлей на фото */
+.status-overlay {
+    position: absolute;
+    top: 6px; left: 6px;
+    font-size: 0.65rem;
+    padding: 2px 7px;
+    border-radius: 2px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-family: "Share Tech Mono", monospace;
+}
+.status-active   { background: rgba(76,255,128,0.2); border: 1px solid rgba(76,255,128,0.6); color: #4cff80; }
+.status-inactive { background: rgba(255,60,60,0.15); border: 1px solid rgba(255,60,60,0.5); color: #ff5050; }
+
+/* ── Тіло картки ── */
+.card-info {
+    flex: 1;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+.card-name {
+    font-size: 1rem;
+    color: #4cff80;
+    text-shadow: 0 0 6px rgba(76,255,128,0.5);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.card-desc {
+    font-size: 0.78rem;
+    opacity: 0.45;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.card-meta {
+    font-size: 0.8rem;
+    opacity: 0.6;
+    margin-top: auto;
+    padding-top: 6px;
+}
+
+/* ── Кнопки дій ── */
+.card-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px;
+    justify-content: center;
+    flex-shrink: 0;
+    border-left: 1px solid rgba(76,255,128,0.1);
+}
+.btn-action {
+    font-family: "Share Tech Mono", monospace;
+    font-size: 0.75rem;
+    padding: 6px 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: 0.15s;
+    white-space: nowrap;
+    text-align: center;
+    text-transform: uppercase;
+}
+.btn-toggle {
+    background: rgba(76,255,128,0.07);
+    border: 1px solid rgba(76,255,128,0.45);
+    color: #4cff80;
+}
+.btn-toggle:hover { background: rgba(76,255,128,0.2); border-color: #4cff80; }
+.btn-delete {
+    background: rgba(255,60,60,0.06);
+    border: 1px solid rgba(255,60,60,0.35);
+    color: rgba(255,80,80,0.8);
+}
+.btn-delete:hover { background: rgba(255,60,60,0.15); border-color: #ff5050; color: #ff5050; }
+
+/* ── Фільтр-кнопки ── */
+.filter-btn {
+    font-family: "Share Tech Mono", monospace;
+    font-size: 0.8rem;
+    padding: 5px 14px;
+    border-radius: 3px;
+    border: 1px solid rgba(76,255,128,0.35);
+    background: none;
+    color: rgba(76,255,128,0.6);
+    cursor: pointer;
+    transition: 0.15s;
+    text-transform: uppercase;
+}
+.filter-btn.active, .filter-btn:hover {
+    border-color: #4cff80;
+    color: #4cff80;
+    background: rgba(76,255,128,0.08);
+}
+
+/* ── Підтвердження видалення ── */
+.delete-confirm {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+.delete-confirm.show { display: flex; }
+.confirm-box {
+    border: 1px solid #ff5050;
+    border-radius: 4px;
+    background: #0c0f0c;
+    padding: 28px 32px;
+    max-width: 380px;
+    width: 90%;
+    box-shadow: 0 0 30px rgba(255,60,60,0.3);
+    text-align: center;
+    font-family: "Share Tech Mono", monospace;
+}
+.confirm-box h3 { color: #ff5050; margin-bottom: 8px; }
+.confirm-box p  { opacity: 0.7; font-size: 0.9rem; margin-bottom: 20px; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{% include 'admin/_admin_navigation.html' %}
+
+<div class="terminal-panel mb-4">
+    <div class="terminal-header d-flex justify-content-between align-items-center">
+        <span class="terminal-title">[ АДМІНІСТРУВАННЯ МЕНЮ ]</span>
+        <span class="terminal-code">NODE: MENU-CHECK</span>
+    </div>
+    <div class="terminal-body d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <p class="mb-0">> Змінюйте статус страв або видаляйте позиції.</p>
+        </div>
+        <div style="font-size:0.82rem; opacity:0.6;">
+            Всього: {{ all_positions|length }} позицій
+        </div>
+    </div>
+</div>
+
+<!-- Flash -->
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+<div class="alert alert-haven mb-3">{{ messages[-1] }}</div>
+{% endif %}
+{% endwith %}
+
+<!-- Фільтри -->
+<div class="d-flex gap-2 mb-4 flex-wrap">
+    <button class="filter-btn active" id="filterAll">Всі</button>
+    <button class="filter-btn" id="filterActive">Активні</button>
+    <button class="filter-btn" id="filterInactive">Неактивні</button>
+</div>
+
+<!-- Картки -->
+<div class="d-flex flex-column gap-3" id="cardList">
+    {% for pos in all_positions %}
+    <div class="menu-admin-card {{ '' if pos.active else 'inactive' }}"
+         data-status="{{ 'active' if pos.active else 'inactive' }}"
+         style="animation-delay: {{ loop.index0 * 0.05 }}s">
+
+        <!-- Фото -->
+        <div class="card-img-wrap">
+            {% if pos.file_name %}
+            <img src="/static/menu/{{ pos.file_name }}" alt="{{ pos.name }}"
+                 onerror="this.style.display='none'">
+            {% else %}
+            <div class="card-img-placeholder">☢</div>
+            {% endif %}
+            <span class="status-overlay {{ 'status-active' if pos.active else 'status-inactive' }}">
+                {{ 'ON' if pos.active else 'OFF' }}
+            </span>
+        </div>
+
+        <!-- Інфо -->
+        <div class="card-info">
+            <div class="card-name">{{ pos.name }}</div>
+            <div class="card-desc">{{ pos.description }}</div>
+            <div class="card-meta">
+                💰 {{ pos.price }} грн &nbsp;·&nbsp; ⚖ {{ pos.weight }} г &nbsp;·&nbsp; ID: {{ pos.id }}
+            </div>
+        </div>
+
+        <!-- Дії -->
+        <div class="card-actions">
+            <form method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="pos_id" value="{{ pos.id }}">
+                <button type="submit" name="change_status" class="btn-action btn-toggle">
+                    {% if pos.active %}⏸ Деактивувати{% else %}▶ Активувати{% endif %}
+                </button>
+            </form>
+
+            <button class="btn-action btn-delete"
+                    data-id="{{ pos.id }}"
+                    data-name="{{ pos.name }}">
+                ✖ Видалити
+            </button>
+        </div>
+
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Модальне вікно підтвердження видалення -->
+<div class="delete-confirm" id="deleteModal">
+    <div class="confirm-box">
+        <h3>⚠ ПІДТВЕРДЖЕННЯ</h3>
+        <p id="confirmText">Видалити позицію?</p>
+        <form method="post" id="deleteForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="pos_id" id="deletePosId">
+            <div class="d-flex gap-3 justify-content-center">
+                <button type="submit" name="delete_position" class="btn-action btn-delete" style="padding:10px 24px;">
+                    ✖ Так, видалити
+                </button>
+                <button type="button" class="btn-action btn-toggle" style="padding:10px 24px;"
+                        id="cancelDelete">
+                    Скасувати
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script nonce="{{ nonce }}">
+// ── Фільтрація ──
+function filterCards(status, btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.menu-admin-card').forEach(card => {
+        card.style.display = (status === 'all' || card.dataset.status === status) ? 'flex' : 'none';
+    });
+}
+
+document.getElementById('filterAll').addEventListener('click', function() { filterCards('all', this); });
+document.getElementById('filterActive').addEventListener('click', function() { filterCards('active', this); });
+document.getElementById('filterInactive').addEventListener('click', function() { filterCards('inactive', this); });
+
+// ── Видалення ──
+const modal     = document.getElementById('deleteModal');
+const posIdInput = document.getElementById('deletePosId');
+const confirmText = document.getElementById('confirmText');
+
+document.querySelectorAll('.btn-delete[data-id]').forEach(btn => {
+    btn.addEventListener('click', function() {
+        posIdInput.value   = this.dataset.id;
+        confirmText.textContent = `Видалити "${this.dataset.name}"? Цю дію неможливо скасувати.`;
+        modal.classList.add('show');
+    });
+});
+
+document.getElementById('cancelDelete').addEventListener('click', function() {
+    modal.classList.remove('show');
+});
+
+modal.addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('show');
+});
+</script>
+{% endblock %}

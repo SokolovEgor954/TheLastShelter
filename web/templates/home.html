@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+{% set active_page = 'home' %}
+
+{% block title %}Останній Прихисток v3.0 — Головна{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ══ HERO ══ */
+.hero-wrap {
+    text-align: center;
+    padding: 3rem 0 2rem;
+    position: relative;
+}
+
+/* Версійний бейдж */
+.version-badge {
+    display: inline-block;
+    border: 1px solid rgba(76,255,128,0.5);
+    padding: 3px 14px;
+    border-radius: 2px;
+    font-size: 0.75rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    opacity: 0.7;
+    margin-bottom: 1.2rem;
+    animation: fadeIn 0.5s ease forwards;
+}
+
+/* Заголовок */
+.hero-title {
+    font-size: clamp(2.2rem, 6vw, 3.8rem);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    text-shadow: 0 0 18px rgba(76,255,128,1), 0 0 40px rgba(76,255,128,0.4);
+    margin: 0 0 0.4rem;
+    animation: fadeIn 0.6s ease 0.1s both;
+}
+
+.hero-subtitle {
+    font-size: 1.05rem;
+    opacity: 0.6;
+    margin-bottom: 2rem;
+    animation: fadeIn 0.6s ease 0.2s both;
+}
+
+/* Кнопки hero */
+.hero-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    animation: fadeIn 0.6s ease 0.3s both;
+}
+
+/* ══ TYPEWRITER ══ */
+.typewriter-wrap {
+    font-size: 1rem;
+    opacity: 0.75;
+    min-height: 1.5em;
+    margin-top: 0.5rem;
+}
+.typewriter-text::after {
+    content: '▋';
+    animation: blink 0.9s step-start infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ══ СТАТУС-РЯДОК ══ */
+.status-bar {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin: 1.6rem 0;
+    animation: fadeIn 0.6s ease 0.4s both;
+}
+.status-item {
+    font-size: 0.78rem;
+    opacity: 0.55;
+    letter-spacing: 1px;
+}
+.status-dot {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #4cff80;
+    box-shadow: 0 0 6px #4cff80;
+    margin-right: 5px;
+    animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* ══ СІТКА ФІЧ ══ */
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin: 2rem 0;
+}
+.feature-card {
+    border: 1px solid rgba(76,255,128,0.25);
+    border-radius: 4px;
+    padding: 18px;
+    background: rgba(10,15,10,0.9);
+    transition: 0.2s;
+    opacity: 0;
+    animation: fadeUp 0.4s ease forwards;
+}
+.feature-card:hover {
+    border-color: #4cff80;
+    box-shadow: 0 0 14px rgba(76,255,128,0.2);
+    transform: translateY(-2px);
+}
+.feature-icon { font-size: 1.5rem; margin-bottom: 8px; }
+.feature-title { font-size: 0.9rem; color: #4cff80; margin-bottom: 4px; }
+.feature-desc  { font-size: 0.78rem; opacity: 0.5; line-height: 1.5; }
+
+/* ══ CHANGELOG v3.0 ══ */
+.changelog {
+    border-left: 2px solid rgba(76,255,128,0.4);
+    padding-left: 16px;
+    margin: 0;
+}
+.changelog-item {
+    padding: 6px 0;
+    font-size: 0.88rem;
+    border-bottom: 1px solid rgba(76,255,128,0.07);
+    opacity: 0.8;
+}
+.changelog-item:last-child { border-bottom: none; }
+.changelog-tag {
+    font-size: 0.7rem;
+    padding: 1px 7px;
+    border-radius: 2px;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+.tag-new  { background: rgba(76,255,128,0.15); border: 1px solid rgba(76,255,128,0.4); color: #4cff80; }
+.tag-fix  { background: rgba(255,200,0,0.1);   border: 1px solid rgba(255,200,0,0.4);  color: #ffc800; }
+.tag-upd  { background: rgba(100,180,255,0.1); border: 1px solid rgba(100,180,255,0.3); color: #64b4ff; }
+
+/* ══ ЗАГАЛЬНІ ══ */
+@keyframes fadeIn  { from { opacity:0; }                       to { opacity:1; } }
+@keyframes fadeUp  { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+
+/* Юзер-привітання */
+.user-greeting {
+    font-size: 1rem;
+    margin-top: 1rem;
+    opacity: 0.8;
+    animation: fadeIn 0.5s ease 0.5s both;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ══════════════ HERO ══════════════ -->
+<div class="hero-wrap">
+
+    <div class="version-badge">☢ версія 2.0 — реліз 2077</div>
+
+    <h1 class="hero-title">ОСТАННІЙ ПРИХИСТОК</h1>
+    <p class="hero-subtitle">Тут немає світла. Є лише вогонь кухні.</p>
+
+    <!-- Typewriter -->
+    <div class="typewriter-wrap">
+        > <span class="typewriter-text" id="typewriter"></span>
+    </div>
+
+    <!-- Статус-рядки -->
+    <div class="status-bar">
+        <span class="status-item"><span class="status-dot"></span>СИСТЕМА ОНЛАЙН</span>
+        <span class="status-item"><span class="status-dot" style="animation-delay:0.4s"></span>МЕНЮ АКТИВНЕ</span>
+        <span class="status-item"><span class="status-dot" style="animation-delay:0.8s"></span>КУХНЯ ПРАЦЮЄ</span>
+    </div>
+
+    <!-- Кнопки -->
+    <div class="hero-actions">
+        <a href="/menu" class="btn btn-haven" style="font-size:1.05rem; padding:13px 30px;">
+            ☰ Переглянути меню
+        </a>
+        {% if not current_user.is_authenticated %}
+        <a href="/register" class="btn btn-outline-haven" style="font-size:1.05rem; padding:13px 30px;">
+            ☢ Приєднатись
+        </a>
+        {% else %}
+        <a href="/reserved" class="btn btn-outline-haven" style="font-size:1.05rem; padding:13px 30px;">
+            🪑 Забронювати стіл
+        </a>
+        {% endif %}
+    </div>
+
+    {% if current_user.is_authenticated %}
+    <div class="user-greeting">
+        > Вітаємо назад, <span class="terminal-highlight">{{ current_user.nickname }}</span>.
+        Система вас впізнала.
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- ══════════════ ФІЧІ v3.0 ══════════════ -->
+<div class="terminal-panel mb-4">
+    <div class="terminal-header d-flex justify-content-between align-items-center">
+        <span class="terminal-title">[ ЩО НОВОГО У v3.0 ]</span>
+        <span class="terminal-code">CHANGELOG</span>
+    </div>
+    <div class="terminal-body pt-2">
+        <ul class="changelog">
+            <li class="changelog-item">
+                <span class="changelog-tag tag-new">NEW</span>
+                Інтерактивна схема залу — обирай столик прямо на карті
+            </li>
+            <li class="changelog-item">
+                <span class="changelog-tag tag-new">NEW</span>
+                Система відгуків з рейтингом на кожну страву
+            </li>
+            <li class="changelog-item">
+                <span class="changelog-tag tag-new">NEW</span>
+                Email-повідомлення про замовлення, бронювання та скасування
+            </li>
+            <li class="changelog-item">
+                <span class="changelog-tag tag-new">NEW</span>
+                Скидання пароля через електронну пошту
+            </li>
+            <li class="changelog-item">
+                <span class="changelog-tag tag-new">NEW</span>
+                Telegram-бот — трекер замовлень, бронювання, меню
+            </li>
+            <li class="changelog-item">
+                <span class="changelog-tag tag-new">NEW</span>
+                Трекер статусу замовлення — Нове → Готується → Готово → Доставлено
+            </li>
+            <li class="changelog-item">
+                <span class="changelog-tag tag-upd">UPD</span>
+                Пошук та фільтрація меню за назвою, інгредієнтами і ціною
+            </li>
+            <li class="changelog-item">
+                <span class="changelog-tag tag-upd">UPD</span>
+                Адмін-панель: управління юзерами, меню, бронюваннями
+            </li>
+            <li class="changelog-item">
+                <span class="changelog-tag tag-upd">UPD</span>
+                Скасування бронювання юзером через сайт та Telegram
+            </li>
+            <li class="changelog-item">
+                <span class="changelog-tag tag-fix">FIX</span>
+                CSP-сумісність — всі скрипти через nonce
+            </li>
+        </ul>
+    </div>
+</div>
+
+<!-- ══════════════ МОЖЛИВОСТІ ══════════════ -->
+<div class="features-grid">
+    <div class="feature-card" style="animation-delay:0.05s">
+        <div class="feature-icon">☰</div>
+        <div class="feature-title">Меню Прихистку</div>
+        <div class="feature-desc">Страви Старого Світу. Кожна позиція — детальний опис, вага та ціна.</div>
+    </div>
+    <div class="feature-card" style="animation-delay:0.1s">
+        <div class="feature-icon">🛒</div>
+        <div class="feature-title">Кошик та замовлення</div>
+        <div class="feature-desc">Додавай страви в кошик і відстежуй історію своїх замовлень.</div>
+    </div>
+    <div class="feature-card" style="animation-delay:0.15s">
+        <div class="feature-icon">🪑</div>
+        <div class="feature-title">Бронювання столиків</div>
+        <div class="feature-desc">Забронюй місце у Прихистку. Доступно лише для виживших у зоні 20 км.</div>
+    </div>
+    <div class="feature-card" style="animation-delay:0.2s">
+        <div class="feature-icon">👤</div>
+        <div class="feature-title">Особова справа</div>
+        <div class="feature-desc">Профіль виживши зі статистикою, керуванням акаунтом та безпекою.</div>
+    </div>
+</div>
+
+<!-- Гості -->
+{% if not current_user.is_authenticated %}
+<div class="terminal-panel">
+    <div class="terminal-header">
+        <span class="terminal-title">[ ДОСТУП ОБМЕЖЕНО ]</span>
+        <span class="terminal-code">STATUS: GUEST</span>
+    </div>
+    <div class="terminal-body">
+        <p>> Для замовлень та бронювань необхідна реєстрація у системі Прихистку.</p>
+        <div class="d-flex gap-3 mt-3 flex-wrap">
+            <a href="/register" class="btn btn-haven">☢ Зареєструватись</a>
+            <a href="/login" class="btn btn-outline-haven">→ Увійти</a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script nonce="{{ nonce if nonce else '' }}">
+document.addEventListener('DOMContentLoaded', function() {
+    const phrases = [
+        "Ласкаво просимо до Останнього Прихистку...",
+        "Версія 2.0 вже доступна.",
+        "Кухня відкрита. Столики чекають.",
+        "Меню Старого Світу оновлено.",
+        "Координати: 50.45°N / 30.52°E",
+        "Бронювання столиків тепер доступне онлайн.",
+    ];
+    let pi = 0, ci = 0, deleting = false;
+    const el = document.getElementById('typewriter');
+    if (!el) return;
+
+    function type() {
+        const phrase = phrases[pi];
+        if (!deleting) {
+            el.textContent = phrase.slice(0, ++ci);
+            if (ci === phrase.length) {
+                deleting = true;
+                setTimeout(type, 1800);
+                return;
+            }
+        } else {
+            el.textContent = phrase.slice(0, --ci);
+            if (ci === 0) {
+                deleting = false;
+                pi = (pi + 1) % phrases.length;
+            }
+        }
+        setTimeout(type, deleting ? 30 : 60);
+    }
+    type();
+});
+</script>
+{% endblock %}
